@@ -35,14 +35,14 @@ type FindPersistedDashboardsQuery struct {
 
 	Filters []interface{}
 
-	Result         HitList
-	RequestCounter bool
+	Result  HitList
+	CountDB bool
 }
 
-type CountDashboardsResult []*DashboardCounter
+type CountDashboardsResult []DashboardCounter
 
 type DashboardCounter struct {
-	FolderUID string
+	FolderUID string `xorm:"folder_uid"`
 	Count     int64
 }
 
@@ -70,6 +70,7 @@ type Hit struct {
 	FolderURL    string   `json:"folderUrl,omitempty"`
 	SortMeta     int64    `json:"sortMeta"`
 	SortMetaName string   `json:"sortMetaName,omitempty"`
+	DsCounter    int64    `json:"dscount,omitempty"`
 }
 
 type HitList []*Hit

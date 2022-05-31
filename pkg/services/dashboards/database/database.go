@@ -1007,33 +1007,35 @@ func (d *DashboardStore) FindDashboards(ctx context.Context, query *models.FindP
 		return nil, err
 	}
 
-	if query.RequestCounter {
-		dsCounterRes := make([]*models.DashboardCounter, 0)
-		sb.GroupBy = "GROUP BY folder_uid"
-		sql, params := sb.ToSQL(limit, page, searchstore.BuildSelectForCount)
+	if query.CountDB {
+		counter := make(map[int64]int64)
 
-		err := d.sqlStore.WithDbSession(ctx, func(dbSession *sqlstore.DBSession) error {
-			return dbSession.SQL(sql, params...).Find(&dsCounterRes)
-		})
-		if err != nil {
-			mergeCounterWithDashboards(&res, dsCounterRes)
+		for _, ele := range res {
+			if !ele.IsFolder && ele.FolderID > 0 {
+				counter[ele.FolderID]++
+			}
+		}
+
+		for i, ele := range res {
+			if ele.IsFolder {
+				res[i].DsCounter = counter[ele.ID]
+			}
 		}
 	}
-
-	fmt.Println("response after counting is: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ", res)
 
 	return res, nil
 }
 
-func mergeCounterWithDashboards(dsFound *[]dashboards.DashboardSearchProjection, cRes models.CountDashboardsResult) {
-	for _, d := range *dsFound {
-		if d.IsFolder {
-			for _, c := range cRes {
-				if c.FolderUID == d.UID {
-					d.DsCounter = c.Count
-					break
-				}
-			}
-		}
-	}
-}
+// func mergeCounterWithDashboards(dsFound *[]dashboards.DashboardSearchProjection, cRes models.CountDashboardsResult) {
+// 	fmt.Println("<<<<<<<<<<<<<<<<<<<<<<<<<< I am in the mergeCounterWithDashboards function >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", cRes)
+// 	for _, d := range *dsFound {
+// 		if d.IsFolder {
+// 			for _, c := range cRes {
+// 				if c.FolderUID == d.UID {
+// 					d.DsCounter = c.Count
+// 					break
+// 				}
+// 			}
+// 		}
+// 	}
+// }

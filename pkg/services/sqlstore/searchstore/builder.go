@@ -38,13 +38,14 @@ func (b *Builder) ToSQL(limit, page int64, selectBuilder BuildSelect) (string, [
 	b.sql.WriteString(
 		`LEFT OUTER JOIN dashboard AS folder ON folder.id = dashboard.folder_id
 		LEFT OUTER JOIN dashboard_tag ON dashboard.id = dashboard_tag.dashboard_id`)
-	b.sql.WriteString("\n")
 
-	if b.GroupBy != "" {
-		b.sql.WriteString(b.GroupBy)
-	}
 	b.sql.WriteString("\n")
 	b.sql.WriteString(orderQuery)
+
+	if b.GroupBy != "" {
+		b.sql.WriteString(") \n")
+		b.sql.WriteString(b.GroupBy)
+	}
 	return b.sql.String(), b.params
 }
 
@@ -52,7 +53,18 @@ type BuildSelect func(b *Builder)
 
 func BuildSelectForCount(b *Builder) {
 	b.sql.WriteString(
-		`SELECT folder_uid, COUNT(*)`)
+		`SELECT folder.uid, COUNT(*) FROM (
+			SELECT
+				dashboard.id,
+				dashboard.uid,
+				dashboard.title,
+				dashboard.slug,
+				dashboard_tag.term,
+				dashboard.is_folder,
+				dashboard.folder_id,
+				folder.uid AS folder_uid,
+				folder.slug AS folder_slug,
+				folder.title AS folder_title `)
 	for _, f := range b.Filters {
 		if f, ok := f.(FilterSelect); ok {
 			b.sql.WriteString(fmt.Sprintf(", %s", f.Select()))
